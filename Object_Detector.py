@@ -82,3 +82,20 @@ def video_show(detector, path_dir): #path of folder contain frames
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
+
+def mp4_loader(detector, video_path):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("Error opening video file")
+        exit()
+    while True:
+        ret, frame = cap.read()
+        result = detector.detect_objects(frame)
+        frame = detector.image_with_bbox(frame, result[0], result[1], result[2])
+        cv2.imshow('mp4Loader', frame)
+
+        if cv2.waitKey(10) & 0xFF == ord('q'):
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+
