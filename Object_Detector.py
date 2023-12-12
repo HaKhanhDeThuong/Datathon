@@ -26,9 +26,7 @@ class ObjectDetector:
             ltwh = track.to_ltwh()
             track_id = track.track_id
             left, top, width, height = ltwh
-            cv2.rectangle(image, (int(left), int(top)), (int(width), int(height)), (0, 255, 0), 2)
-
-            # Ghi ID lên ảnh
+            # ID ASSIGMENT
             cv2.putText(image, "ID: " + str(track_id), (int(left), int(top - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         return image
 
@@ -36,9 +34,11 @@ class ObjectDetector:
         detection = []
         for label in labels:
             score = scores[label[0]]
-            if float(score) > 0.9:
+            if float(score) > 0.7: #optional
                 box = [int(coord) for coord in boxes[label[0]]]
-                detection.append([box, float(score), 1])
+                detection.append([box, float(score), 1])           
+                cv2.rectangle(image, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 2)
+
         image = self.addingID(image, detection)
         return image
 
@@ -65,16 +65,15 @@ def video_capture(detector):
         frame = detector.image_with_bbox(frame, result[0], result[1], result[2])
         cv2.imshow('Camera', frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(10) & 0xFF == ord('q'):
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
 def video_show(detector, path_dir): #path of folder contain frames
-
     list_item = os.listdir(path_dir) 
-    for item in list_item[400:]:
+    for item in list_item:
         image_path = os.path.join(path_dir, item)
         frame = cv2.imread(image_path)    
         result = detector.detect_objects(frame)
