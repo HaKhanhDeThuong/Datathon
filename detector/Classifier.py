@@ -34,7 +34,7 @@ class ResNetModel(nn.Module):
 class Classifier:
     def __init__(self):
         self.model = ResNetModel(num_classes = 2)
-        self.model.load_state_dict(torch.load(r'D:\code_folder\data-code\Datathon2023\git\Datathon\temp\checkpoint-final.pth'))
+        self.model.load_state_dict(torch.load(r'D:\code_folder\data-code\Datathon2023\git\Datathon\classification-model\checkpoint-final.pth'))
         self.transform = transform = transforms.Compose([transforms.Resize((224, 224)),
                                 transforms.ToTensor()])
         if torch.cuda.is_available():
