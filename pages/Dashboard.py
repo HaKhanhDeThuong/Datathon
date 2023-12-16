@@ -8,6 +8,7 @@ import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
 from firebase_admin import auth
+import base64
 
 st.set_page_config(page_title="WinX", page_icon="images/logo.png",layout="wide")
 
@@ -18,28 +19,107 @@ def load_lottieurl(url):
         return None
     return r.json
 
+def set_bg_hack(main_bg, scale_factor=0.5):
+    '''
+    A function to set a background image and scale it.
+ 
+    Parameters
+    ----------
+    main_bg : str
+        Path to the background image.
+    scale_factor : float, optional
+        Scale factor for the background image. The default is 0.5.
+
+    Returns
+    -------
+    The background.
+    '''
+    # set bg name
+    main_bg_ext = "images/background.jpg"
+        
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background: url(data:image/{main_bg_ext};base64,{base64.b64encode(open(main_bg, "rb").read()).decode()});
+             background-repeat: no-repeat;
+             
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+#set_bg_hack("images/background.jpg" , scale_factor=0.5)
+
 def header(url):
     st.markdown(f'<p style="background-color:#4F46E5;font-size:24px;border-radius:2%; padding: 5px; font-weight: bold">{url}</p>', unsafe_allow_html=True)
 
-background_url = "images/background.jpg"
-background_style = f"""
-    <style>
-        .st-d1 {{
-            background-image: url('{background_url}');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center center;
-            height: 100vh;  /* Adjust the height as needed */
-        }}
-    </style>
-"""
+def subheader(url):
+    st.markdown(f'<p style="font-size:24px; padding: 5px; font-weight: bold; text-align: center; color:#4F46E5">{url}</p>', unsafe_allow_html=True)
+
+def titleWindow(url):
+    st.markdown(f'<p style="font-size:50px; padding: 5px; font-weight: bold; text-align: center; color:#289df2">{url}</p>', unsafe_allow_html=True)
+
+def normalText(url):
+    st.markdown(f'<p style="font-size:20px; padding: 5px;  text-align: center; color:#ffffff">{url}</p>', unsafe_allow_html=True)
+
 ##Header
 with st.container():
-        st.subheader("Personalized window displays drive sales and customer engagement.")
-        st.title(":blue[Window displays that change with you]")
-        st.write("We are the future of window displays. Our real-time solutions use AI to understand your customers and create personalized, engaging experiences that will keep them coming back for more.")
-        st.button("Get a demo")
+    first, second, third, fourth, fifth = st.columns((5))
+    with third:
+        st.image("images/logo1.png", width=300)
+with st.container():
+    # Apply CSS to center the content
+    st.markdown(
+        """
+        <style>
+        .centered-content {
+            text-align: center;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
+    subheader("Personalized window displays drive sales and customer engagement.")
+    titleWindow("Window displays that change with you")
+    normalText("We are the future of window displays. Our real-time solutions use AI to understand your customers and create personalized, engaging experiences that will keep them coming back for more.")
+    transparent_button_html = """
+    <style>
+        .container{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+       .transparent-button {
+            background-color: transparent;
+            border: 2px solid transparent;
+            color: #FF0000; 
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            transition-duration: 0.3s;
+            cursor: pointer;
+            border-color: red;
+            margin: auto; 
+            border-radius: 10px;
+        }
+        .transparent-button:hover {
+            background-color: #FF0000; 
+            color: #FFFFFF; 
+            border-color: #FF0000; 
+        }
+    </style>
+    <div class="container">
+        <button class="transparent-button">Get a demo</button>
+    </div>
+"""
+
+# Hiển thị nút trong suốt
+st.markdown(transparent_button_html, unsafe_allow_html=True)
 ##Description
 with st.container(): 
     st.write("---")
@@ -190,74 +270,3 @@ with st.form(key="vendor_form"):
 
             st.success("Successfully submitted!")
             
-##Signin/Login
-if not firebase_admin._apps:
-    cred = credentials.Certificate('datathon-ceb28-28c5a321ec51.json') 
-    default_app = firebase_admin.initialize_app(cred)
-    
-def app():
-# Usernm = []
-    st.title('Log in :blue[WinX]')
-    if 'username' not in st.session_state:
-        st.session_state.username = ''
-    if 'useremail' not in st.session_state:
-        st.session_state.useremail = ''
-
-
-
-    def f(): 
-        try:
-            user = auth.get_user_by_email(email)
-            print(user.uid)
-            st.session_state.username = user.uid
-            st.session_state.useremail = user.email
-            
-            global Usernm
-            Usernm=(user.uid)
-            
-            st.session_state.signedout = True
-            st.session_state.signout = True   
-            st.balloons()
-                       
-        except: 
-            st.warning('Login Failed')
-
-    def t():
-        st.session_state.signout = False
-        st.session_state.signedout = False   
-        st.session_state.username = ''
-
-
-        
-    
-        
-    if "signedout"  not in st.session_state:
-        st.session_state["signedout"] = False
-    if 'signout' not in st.session_state:
-        st.session_state['signout'] = False    
-        
-
-        
-    
-    if not st.session_state["signedout"]:
-    # only show if the state is False, hence the button has never been clicked
-        st.markdown("Log in with the account we provided you via email.")
-        email = st.text_input('Email Address')
-        password = st.text_input('Password', type='password')
-        st.button('Login', on_click=f)
-            
-            
-    if st.session_state.signout:
-                st.header('Your information:')
-                st.text('Name: '+st.session_state.username)
-                st.text('Email: '+st.session_state.useremail)
-                st.button('Sign out', on_click=t) 
-            
-                
-    
-
-                            
-    def ap():
-        st.write('Posts')
-if __name__ == "__main__":
-    app()
