@@ -5,19 +5,22 @@ import threading
 import numpy as np
 import os
 from deep_sort_realtime.deepsort_tracker import DeepSort
+from detector.Classifier import Classifier
+import supervision as sv
+from detector.polygon_generator import Polygon
 
 class Deep_Sort:
     def __init__(self):
-       self.tracker = DeepSort(max_age=5)
+       self.tracker = DeepSort(max_age=20)
 
     def __del__(self):
         pass
 
     def update_tracker(self, detections, image):
         bbs = []
-        for detection in detections.xyxy[0]:
-            box = detection[:4].cpu().numpy().astype(int)
-            confidence = detection[5].cpu().numpy().astype(float)
+        for detection in detections:
+            box = detection[0].astype(int)
+            confidence = detection[2]
             classes = 0
             bb = (box, confidence, classes)
             bbs.append(bb)
@@ -27,9 +30,21 @@ class Deep_Sort:
 class ObjectDetector:
     def __init__(self, device='cuda'):
         self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5l')
+        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         self.model.classes = [0]
         self.Tracker = Deep_Sort()
+        self.classifier = Classifier()
+        self.Polygon = Polygon()
+        self.zone = sv.PolygonZone(polygon=self.Polygon.cor, frame_resolution_wh=(384, 288))
+        self.camera_height = 3.8
+        self.focal_length = 1000
+        self.child_height = 0.8
+        self.adult_height = 1.4
+
+
+    def estimate_height(self, bbox_height_pixels):
+        return (self.camera_height * bbox_height_pixels) / self.focal_length
+
 
     def addingID(self, image, detections):
         tracks = self.Tracker.update_tracker(detections, image)
@@ -37,18 +52,42 @@ class ObjectDetector:
             ltwh = track.to_ltwh()
             track_id = track.track_id
             left, top, width, height = ltwh
-            cv2.putText(image, "ID: " + str(track_id), (int(left), int(top - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            if str(track_id) == '3':
+                print(track_id, height)
+            cv2.putText(image, "ID: " + str(track_id), (int(left), int(top - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         return image
 
-    def detect (self, image):
-        detections = self.model(image)
+    def addingClass(self, image, detection):
+        cls = self.classifier.classify(image, detection)
+        if cls == 1:
+            context = 'walker'
+        else:
+            context = 'browser'
+        age = 'adult'
+        bbox_height_pixels = detection[3] - detection[1]
+        estimate_height = self.estimate_height(bbox_height_pixels)
+        if estimate_height / 10 > self.child_height and estimate_height / 10 < self.adult_height:
+            age = 'child'
+        elif estimate_height / 10 > self.adult_height:
+            age = 'adult'
+        cv2.putText(image, context, (detection[2] + 2, detection[1] + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        cv2.putText(image, age, (detection[2] + 2, detection[1] + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        #export json
+        return image
+
+    def detect(self, image):
+        image = sv.draw_polygon(scene=image, polygon=self.Polygon.cor, color=sv.Color.green(), thickness=1)
+        results = self.model(image, size=640)
+        detections = sv.Detections.from_yolov5(results)
+        mask = self.zone.trigger(detections=detections)
+        detections = detections[mask]
         return detections
 
     def image_with_bbox(self, image, detections):
-        for detection in detections.xyxy[0]:
-            box = detection[:4].cpu().numpy().astype(int)
-            confidence = detection[4].cpu().numpy().astype(float)
-            cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
+        for detection in detections:
+            box = detection[0].astype(int)
+            cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (244, 208, 105), 1)
+            image = self.addingClass(image, box)
         image = self.addingID(image, detections)
         return image
 

@@ -18,7 +18,7 @@ def extractData(dir_, list_dir):
             print(f'extrace {file} success !!!')
 
 if __name__ == "__main__":
-    os.chdir('D:\code_folder\data-code\Datathon2023\code\data')
+    os.chdir('D:\code_folder\data-code\Datathon2023\git\Datathon\data')
     data_dir = os.listdir()
     cor_dir = os.path.join(data_dir[0], 'cor')
     front_dir = os.path.join(data_dir[0], 'front')
